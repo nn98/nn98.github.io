@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState, Fragment } from 'react'
+import { useCallback, useEffect, useRef, useState, Fragment } from 'react'
 import {
-  Avatar, Box, Button, Card, CardActionArea, CardContent, Chip, Collapse, Container, CssBaseline, Divider, Link,
+  Avatar, Box, Button, Card, CardActionArea, Chip, Collapse, CssBaseline, Divider, Link,
   List, ListItemButton, Paper, Stack, Tab, Tabs, ThemeProvider, Typography, createTheme, useMediaQuery,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded'
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded'
 import ExpandLessRounded from '@mui/icons-material/ExpandLessRounded'
 import EmojiEventsRounded from '@mui/icons-material/EmojiEventsRounded'
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
-import { experiences, projects, skills, IMG } from './data.js'
-import { profile, awards, olderProjects, diagrams } from './content.js'
+import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded'
+import { experiences, projects, IMG } from './data.js'
+import { profile, awards, olderProjects, diagrams, skillGroups } from './content.js'
 
 const theme = createTheme({
   colorSchemes: {
@@ -21,16 +23,24 @@ const theme = createTheme({
     fontFamily: '"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
     h1: { fontWeight: 800, letterSpacing: '-0.03em' },
     h2: { fontWeight: 800, letterSpacing: '-0.02em' },
-    h3: { fontWeight: 700 }, h4: { fontWeight: 700 }, h5: { fontWeight: 700 }, h6: { fontWeight: 700 },
+    h3: { fontWeight: 800, letterSpacing: '-0.02em' }, h4: { fontWeight: 700 }, h5: { fontWeight: 700 }, h6: { fontWeight: 700 },
     button: { textTransform: 'none', fontWeight: 600 },
   },
-  components: { MuiCssBaseline: { styleOverrides: { body: { wordBreak: 'keep-all', overflowWrap: 'break-word' } } }, MuiPaper: { defaultProps: { variant: 'outlined' } }, MuiCard: { defaultProps: { variant: 'outlined' } } },
+  components: {
+    MuiCssBaseline: { styleOverrides: { body: { wordBreak: 'keep-all', overflowWrap: 'break-word' } } },
+    MuiPaper: { defaultProps: { variant: 'outlined' } },
+    MuiCard: { defaultProps: { variant: 'outlined' } },
+  },
 })
 
 const SECTIONS = [
   ['profile', 'Profile'], ['experience', 'Experience'], ['projects', 'Projects'], ['design', 'Design'],
   ['awards', 'Awards'], ['skills', 'Skills & Contact'],
 ]
+
+// 넓게 띄운 카드 격자: 칸이 좁아 글자가 잘리지 않게 최소 폭을 둔다
+const grid = (min, gap = 2) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap })
+const soft = t => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.14 : 0.07)
 
 // **굵게**, `코드` 표기를 그대로 살려 그린다
 function Rich({ text }) {
@@ -40,18 +50,28 @@ function Rich({ text }) {
         : p)
 }
 
+// 큰 숫자 + 설명. 강조색 면만 쓰고 테두리는 두지 않는다
+function Stat({ n, l, big }) {
+  return (
+    <Box sx={{ p: { xs: 2, md: 2.5 }, borderRadius: '16px', bgcolor: soft }}>
+      <Typography color="primary" sx={{ fontWeight: 800, fontSize: big ? { xs: 26, md: 34 } : { xs: 22, md: 28 }, lineHeight: 1.15, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{n}</Typography>
+      <Typography color="text.secondary" sx={{ mt: .75, fontSize: 14 }}>{l}</Typography>
+    </Box>
+  )
+}
+
 function Section({ id, title, eyebrow, children }) {
   return (
     <Box component="section" id={id} sx={{
-      height: { md: '100dvh' }, scrollSnapAlign: 'start',
-      display: 'flex', flexDirection: 'column', py: { xs: 6, md: 5 }, px: { xs: 2, md: 6 },
+      height: { md: '100dvh' }, display: 'flex', flexDirection: 'column',
+      py: { xs: 6, md: 5 }, px: { xs: 2, md: 6 }, maxWidth: 1400, mx: 'auto', width: '100%',
     }}>
       {title && <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', mb: 3, flexShrink: 0 }}>
         <Typography variant="h3" component="h2" sx={{ fontSize: { xs: 28, md: 36 } }}>{title}</Typography>
         <Typography variant="overline" color="text.secondary">{eyebrow}</Typography>
       </Stack>}
-      {/* 화면 한 장에 들어가지 않는 내용은 섹션 안에서 스크롤 */}
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: { md: 'auto' }, pr: { md: 1 } }}>{children}</Box>
+      {/* 화면 한 장에 들어가지 않는 내용은 섹션 안에서 스크롤. 넘김 스크립트가 data-scroll을 보고 판단한다 */}
+      <Box data-scroll sx={{ flex: 1, minHeight: 0, overflowY: { md: 'auto' }, overscrollBehavior: 'contain', pr: { md: 1 } }}>{children}</Box>
     </Box>
   )
 }
@@ -69,47 +89,46 @@ function Hero() {
   }, [])
   return (
     <Section id="profile">
-      <Stack direction={{ xs: 'column', lg: 'row' }} spacing={6} sx={{ minHeight: '100%', alignItems: { lg: 'center' } }}>
-        <Stack spacing={3} sx={{ flex: 1.2, minWidth: 0 }}>
-          <Stack direction="row" spacing={3} sx={{ alignItems: 'center' }}>
-            <Avatar src={IMG.profile} alt="김윤서 프로필 사진" sx={{ width: { xs: 96, md: 132 }, height: { xs: 96, md: 132 } }} />
-            <Box>
-              <Chip label="현재 구직 중" color="primary" size="small" variant="outlined" sx={{ mb: 1 }} />
-              <Typography variant="h1" sx={{ fontSize: { xs: 44, md: 64 } }}>{profile.name}</Typography>
-              <Typography variant="h5" color="primary" sx={{ minHeight: '1.5em', fontWeight: 600 }}>{profile.roles[r]}</Typography>
-            </Box>
-          </Stack>
-          <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1.5 }}>{profile.tagline}</Typography>
-          <Typography color="text.secondary" sx={{ fontSize: 17 }}>{profile.bio}</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1.5 }}>
-            {profile.stats.map(([n, l]) => (
-              <Paper key={l} sx={{ p: 2 }}>
-                <Typography color="primary" sx={{ fontWeight: 800, fontSize: { xs: 22, md: 28 }, lineHeight: 1.2 }}>{n}</Typography>
-                <Typography variant="body2" color="text.secondary">{l}</Typography>
-              </Paper>
-            ))}
-          </Box>
-          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
-            {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
-            <Button size="small" variant="contained" href={`mailto:${profile.email}`}>{profile.email}</Button>
-          </Stack>
-        </Stack>
-        <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
-          <Paper sx={{ p: 3 }}>
-            <Stack component="ul" spacing={1.5} sx={{ m: 0, pl: 2.5, fontSize: 16, lineHeight: 1.7 }}>
-              {profile.summary.map(s => <li key={s}><Rich text={s} /></li>)}
-            </Stack>
-          </Paper>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
-            {profile.info.map(([k, v, d]) => (
-              <Box key={k} sx={{ borderTop: 1, borderColor: 'divider', pt: 1 }}>
-                <Typography variant="caption" color="text.secondary">{k}</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>{v}</Typography>
-                {d && <Typography variant="caption" color="text.secondary">{d}</Typography>}
+      <Stack spacing={4} sx={{ minHeight: '100%', justifyContent: 'center' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 1fr' }, gap: 4, alignItems: 'center' }}>
+          <Stack spacing={2.5}>
+            <Stack direction="row" spacing={3} sx={{ alignItems: 'center' }}>
+              <Avatar src={IMG.profile} alt="김윤서 프로필 사진" sx={{ width: { xs: 96, md: 128 }, height: { xs: 96, md: 128 } }} />
+              <Box>
+                <Chip label="현재 구직 중" color="primary" size="small" variant="outlined" sx={{ mb: 1 }} />
+                <Typography variant="h1" sx={{ fontSize: { xs: 44, md: 60 } }}>{profile.name}</Typography>
+                <Typography variant="h5" color="primary" sx={{ minHeight: '1.5em', fontWeight: 600 }}>{profile.roles[r]}</Typography>
               </Box>
-            ))}
+            </Stack>
+            <Typography sx={{ fontSize: { xs: 20, md: 24 }, fontWeight: 700, lineHeight: 1.45 }}>{profile.tagline}</Typography>
+            <Typography color="text.secondary" sx={{ fontSize: 16 }}>{profile.bio}</Typography>
+            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
+              {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
+              <Button size="small" variant="contained" href={`mailto:${profile.email}`}>{profile.email}</Button>
+            </Stack>
+          </Stack>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
+            {profile.stats.map(([n, l]) => <Stat key={l} n={n} l={l} big />)}
           </Box>
-        </Stack>
+        </Box>
+        <Box sx={grid(280)}>
+          {profile.summary.map(s => (
+            <Paper key={s.label} sx={{ p: 3 }}>
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>{s.label}</Typography>
+              <Typography sx={{ fontSize: 19, fontWeight: 700, mb: 1 }}>{s.head}</Typography>
+              <Typography color="text.secondary" sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={s.text} /></Typography>
+            </Paper>
+          ))}
+        </Box>
+        <Box sx={grid(170, 1.5)}>
+          {profile.info.map(([k, v, d]) => (
+            <Box key={k} sx={{ borderTop: 1, borderColor: 'divider', pt: 1 }}>
+              <Typography variant="caption" color="text.secondary">{k}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>{v}</Typography>
+              {d && <Typography variant="caption" color="text.secondary">{d}</Typography>}
+            </Box>
+          ))}
+        </Box>
       </Stack>
     </Section>
   )
@@ -126,20 +145,25 @@ function Experience({ wide }) {
           {experiences.map(x => <Tab key={x.title} sx={{ alignItems: 'flex-start', textAlign: 'left' }}
             label={<Box><Typography sx={{ fontWeight: 700 }}>{x.title}</Typography><Typography variant="caption" color="text.secondary">{x.period}</Typography></Box>} />)}
         </Tabs>
-        <Paper sx={{ p: { xs: 2.5, md: 4 }, flex: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Chip label={e.type} size="small" color="primary" variant="outlined" />
           <Typography variant="h4" sx={{ mt: 1.5, fontSize: { xs: 24, md: 30 } }}>{e.title}</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
             {e.role} · {e.period}{e.link && <> · <Link href={e.link} target="_blank" rel="noopener">학습 저장소</Link></>}
           </Typography>
-          <Stack component="ul" spacing={1.5} sx={{ m: 0, pl: 2.5, fontSize: 16, lineHeight: 1.7 }}>
+          <Box sx={grid(320)}>
             {e.desc.map(d => {
-              // "책임 분리: ..." 처럼 앞에 붙은 주제어를 강조한다
+              // "책임 분리: ..." 처럼 앞에 붙은 주제어를 카드 제목으로 올린다
               const m = d.match(/^([^:]{2,12}): (.*)$/)
-              return <li key={d}>{m ? <><Box component="strong" sx={{ color: 'primary.main' }}>{m[1]}</Box> <Rich text={m[2]} /></> : <Rich text={d} />}</li>
+              return (
+                <Paper key={d} sx={{ p: 2.5 }}>
+                  {m && <Typography color="primary" sx={{ fontWeight: 700, mb: .75 }}>{m[1]}</Typography>}
+                  <Typography sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={m ? m[2] : d} /></Typography>
+                </Paper>
+              )
             })}
-          </Stack>
-        </Paper>
+          </Box>
+        </Box>
       </Stack>
     </Section>
   )
@@ -148,7 +172,7 @@ function Experience({ wide }) {
 function Blk({ title, children }) {
   return (
     <Box>
-      <Typography variant="h6" color="primary" sx={{ mb: 1, fontSize: 17 }}>{title}</Typography>
+      <Typography variant="h6" color="primary" sx={{ mb: 1.25, fontSize: 18 }}>{title}</Typography>
       {children}
     </Box>
   )
@@ -192,25 +216,18 @@ function Projects() {
             </Card>
           ))}
         </Stack>
-        <Paper sx={{ p: { xs: 2.5, md: 4 }, flex: 1, minWidth: 0 }}>
-          <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 36 } }}>{p.title}</Typography>
-          <Typography sx={{ fontSize: 18, fontWeight: 600 }}>{p.summary}</Typography>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 38 } }}>{p.title}</Typography>
+          <Typography sx={{ fontSize: 19, fontWeight: 600 }}>{p.summary}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{p.period} · {p.team}</Typography>
           <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mt: 1.5 }}>{p.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}</Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1.5, my: 3 }}>
-            {p.metrics.map(([n, l]) => (
-              <Box key={l} sx={{ p: 2, borderRadius: 3, bgcolor: 'action.hover' }}>
-                <Typography color="primary" sx={{ fontWeight: 800, fontSize: { xs: 22, md: 28 }, lineHeight: 1.2 }}>{n}</Typography>
-                <Typography variant="body2" color="text.secondary">{l}</Typography>
-              </Box>
-            ))}
-          </Box>
+          <Box sx={{ ...grid(210), my: 3 }}>{p.metrics.map(([n, l]) => <Stat key={l} n={n} l={l} />)}</Box>
           <Typography sx={{ fontSize: 16, lineHeight: 1.75 }}><Rich text={p.description} /></Typography>
           <Stack direction="row" sx={{ flexWrap: 'wrap', gap: .75, mt: 2 }}>{p.tech.map(t => <Chip key={t} label={t} size="small" />)}</Stack>
 
           {/* 기본은 접어 두고 필요할 때 펼친다 */}
           <Collapse in={open}>
-            <Stack spacing={3.5} sx={{ mt: 3.5 }}>
+            <Stack spacing={4} sx={{ mt: 4 }}>
               <Blk title="화면">
                 <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 1 }}>
                   {p.shots.map(([k, c]) => <Box key={k} component="figure" sx={{ m: 0, flexShrink: 0 }}>
@@ -219,12 +236,16 @@ function Projects() {
                   </Box>)}
                 </Stack>
               </Blk>
-              <Blk title="개발 배경"><Typography><Rich text={p.background} /></Typography></Blk>
-              <Blk title="담당 업무"><Typography color="text.secondary" sx={{ mb: 1 }}>{p.role}</Typography><Bullets xs={p.responsibilities} /></Blk>
+              <Box sx={grid(320, 3)}>
+                <Blk title="개발 배경"><Typography><Rich text={p.background} /></Typography></Blk>
+                <Blk title="담당 업무"><Typography color="text.secondary" sx={{ mb: 1 }}>{p.role}</Typography><Bullets xs={p.responsibilities} /></Blk>
+              </Box>
               <Blk title="주요 기능"><Bullets xs={p.features} /></Blk>
-              <Blk title="Troubleshooting"><Stack spacing={1.5}>{p.troubleshooting.map(t => <Trouble key={t.issue} t={t} />)}</Stack></Blk>
-              <Blk title="의의"><Typography><Rich text={p.meaning} /></Typography></Blk>
-              <Blk title="개선점과 다음 계획"><Bullets xs={p.improvements} /></Blk>
+              <Blk title="Troubleshooting"><Box sx={grid(420, 1.5)}>{p.troubleshooting.map(t => <Trouble key={t.issue} t={t} />)}</Box></Blk>
+              <Box sx={grid(320, 3)}>
+                <Blk title="의의"><Typography><Rich text={p.meaning} /></Typography></Blk>
+                <Blk title="개선점과 다음 계획"><Bullets xs={p.improvements} /></Blk>
+              </Box>
               <Blk title="릴리즈 노트">
                 <Box sx={{ display: 'grid', gridTemplateColumns: '84px 1fr', gap: '6px 14px' }}>
                   {p.logs.map(([d, t]) => <Fragment key={d}><Typography variant="body2" color="text.secondary">{d}</Typography><Typography variant="body2">{t}</Typography></Fragment>)}
@@ -236,7 +257,7 @@ function Projects() {
             endIcon={open ? <ExpandLessRounded /> : <ExpandMoreRounded />}>
             {open ? '접기' : `펼쳐서 보기 · 화면, 담당 업무, 트러블슈팅 ${p.troubleshooting.length}건`}
           </Button>
-        </Paper>
+        </Box>
       </Stack>
     </Section>
   )
@@ -244,13 +265,13 @@ function Projects() {
 
 function Node({ n: [t, s, key] }) {
   return (
-    <Paper sx={{
-      px: 2.5, py: 2, minWidth: 150, textAlign: 'center', borderWidth: key ? 2 : 1,
-      borderColor: key ? 'primary.main' : 'divider', bgcolor: key ? 'action.hover' : 'background.paper',
+    <Box sx={{
+      px: 2.5, py: 2, minWidth: 150, textAlign: 'center', borderRadius: '16px',
+      border: key ? 2 : 1, borderColor: key ? 'primary.main' : 'divider', bgcolor: key ? soft : 'background.paper',
     }}>
       <Typography sx={{ fontWeight: 700, fontSize: { xs: 16, md: 19 }, lineHeight: 1.3 }}>{t}</Typography>
       {s && <Typography color="text.secondary" sx={{ fontSize: { xs: 13, md: 15 }, mt: .5 }}>{s}</Typography>}
-    </Paper>
+    </Box>
   )
 }
 
@@ -298,16 +319,16 @@ function Awards() {
           </Fragment>
         ))}
       </List>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
+      <Box sx={grid(300)}>
         {olderProjects.map(o => (
-          <Card key={o.title}><CardContent>
+          <Paper key={o.title} sx={{ p: 2.5 }}>
             <Typography variant="h6">{o.title}</Typography>
             <Typography variant="caption" color="text.secondary">{o.period} · {o.role}</Typography>
             <Typography sx={{ my: 1 }}>{o.summary}</Typography>
             <Box sx={{ fontSize: 14 }}><Bullets xs={o.points} /></Box>
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: .5, mt: 1.5 }}>{o.tech.map(t => <Chip key={t} label={t} size="small" />)}</Stack>
             {o.links.length > 0 && <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>{o.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}</Stack>}
-          </CardContent></Card>
+          </Paper>
         ))}
       </Box>
     </Section>
@@ -317,43 +338,115 @@ function Awards() {
 function SkillsContact() {
   return (
     <Section id="skills" title="기술 스택" eyebrow="Skills">
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
-        {skills.map(s => (
-          <Card key={s.title}><CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>{s.title}</Typography>
-            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: .75, mb: 1.5 }}>{s.items.map(t => <Chip key={t} label={t} color="primary" variant="outlined" size="small" />)}</Stack>
-            <Typography variant="body2" color="text.secondary">{s.desc}</Typography>
-          </CardContent></Card>
+      <Box sx={grid(300)}>
+        {skillGroups.map(s => (
+          <Box key={s.title} sx={{ p: 3, borderRadius: '16px', bgcolor: soft }}>
+            <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>{s.title}</Typography>
+            <Typography sx={{ fontSize: 19, fontWeight: 700, mb: 1.5, lineHeight: 1.4 }}>{s.head}</Typography>
+            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: .75 }}>{s.items.map(t => <Chip key={t} label={t} size="small" sx={{ bgcolor: 'background.paper' }} />)}</Stack>
+          </Box>
         ))}
       </Box>
-      <Paper sx={{ p: { xs: 3, md: 5 }, mt: 4, textAlign: 'center' }}>
-        <Typography variant="h4" sx={{ mb: 1 }}>함께 일할 기회를 찾고 있습니다</Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>Product 서버 개발 자리라면 편하게 연락 주세요.</Typography>
+      <Box sx={{ mt: 5, py: 4, textAlign: 'center' }}>
+        <Typography variant="h4" sx={{ mb: 3 }}>함께 일할 기회를 찾고 있습니다</Typography>
         <Stack direction="row" sx={{ justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
           <Button variant="contained" size="large" href={`mailto:${profile.email}`}>{profile.email}</Button>
           {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
         </Stack>
-      </Paper>
+      </Box>
     </Section>
   )
+}
+
+// 풀페이지 넘김: SaveEats /about과 같은 방식. 기본 스크롤 대신 휠, 스와이프, 키 방향을 받아
+// 트랙을 transform으로 한 장씩 옮긴다(합성 단계에서만 돌아 버벅이지 않는다).
+// 섹션 안 스크롤이 그 방향으로 더 내려갈 수 있으면 안쪽 스크롤에 양보한다
+function usePager(box, track, enabled) {
+  const [cur, setCur] = useState(0)
+  const st = useRef({ cur: 0, busy: false, acc: 0, y0: null, inner: null })
+  const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  const go = useCallback(i => {
+    const s = st.current, n = track.current?.children.length ?? 1
+    i = Math.min(n - 1, Math.max(0, i))
+    if (i === s.cur || s.busy) return
+    s.cur = i; s.busy = true; setCur(i)
+    setTimeout(() => { s.busy = false }, reduce ? 50 : 650)
+  }, [track, reduce])
+
+  useEffect(() => {
+    const el = box.current
+    if (!enabled || !el) return
+    const s = st.current
+    const canInner = (t, dir) => {
+      const inner = t.closest?.('[data-scroll]')
+      if (!inner || inner.scrollHeight <= inner.clientHeight + 1) return false
+      return dir > 0 ? inner.scrollTop + inner.clientHeight < inner.scrollHeight - 1 : inner.scrollTop > 0
+    }
+    const wheel = e => {
+      if (e.ctrlKey) return
+      const dir = Math.sign(e.deltaY)
+      if (canInner(e.target, dir)) { s.acc = 0; return }
+      e.preventDefault()
+      s.acc += e.deltaY
+      if (Math.abs(s.acc) < 40) return
+      go(s.cur + Math.sign(s.acc)); s.acc = 0
+    }
+    // 터치는 시작할 때 안쪽 스크롤이 끝에 닿아 있었는지를 본다
+    const ts = e => { s.y0 = e.touches[0].clientY; s.inner = e.target }
+    const te = e => {
+      if (s.y0 === null) return
+      const dy = s.y0 - e.changedTouches[0].clientY; s.y0 = null
+      if (Math.abs(dy) > 40 && !canInner(s.inner, Math.sign(dy))) go(s.cur + Math.sign(dy))
+    }
+    const key = e => {
+      const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key]
+      if (d && !canInner(document.activeElement, d)) { e.preventDefault(); go(s.cur + d) }
+    }
+    // overflow: hidden이어도 #주소 이동이나 포커스가 main을 스크롤하면 transform과 겹쳐 밀린다
+    const pin = () => { if (el.scrollTop) el.scrollTop = 0 }
+    pin(); el.addEventListener('scroll', pin)
+    el.addEventListener('wheel', wheel, { passive: false })
+    el.addEventListener('touchstart', ts, { passive: true })
+    el.addEventListener('touchend', te)
+    addEventListener('keydown', key)
+    return () => { el.removeEventListener('scroll', pin); el.removeEventListener('wheel', wheel); el.removeEventListener('touchstart', ts); el.removeEventListener('touchend', te); removeEventListener('keydown', key) }
+  }, [box, enabled, go])
+
+  return [cur, go]
 }
 
 export default function App() {
   const wide = useMediaQuery(theme.breakpoints.up('md'))
   const main = useRef(null)
-  const [active, setActive] = useState(SECTIONS[0][0])
+  const track = useRef(null)
+  const [cur, go] = usePager(main, track, wide)
+  const [, setH] = useState(0)
+  const [mobileActive, setMobileActive] = useState(SECTIONS[0][0])
 
-  // 넓은 화면은 main이 스크롤 컨테이너다. 그 안에서 절반 넘게 보이는 섹션을 현재 위치로 본다
   useEffect(() => {
-    const obs = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && setActive(e.target.id)),
-      { root: wide ? main.current : null, threshold: wide ? 0.5 : 0.25 })
-    main.current.querySelectorAll('section[id]').forEach(s => obs.observe(s))
+    // 크기가 바뀌면 다시 그려 섹션 위치(offsetTop)를 새로 읽는다
+    const fit = () => setH(main.current?.clientHeight ?? 0)
+    fit(); addEventListener('resize', fit)
+    return () => removeEventListener('resize', fit)
+  }, [])
+
+  // #주소로 들어오면 그 섹션부터
+  useEffect(() => {
+    const i = SECTIONS.findIndex(([id]) => '#' + id === location.hash)
+    if (i > 0) wide ? go(i) : document.getElementById(SECTIONS[i][0])?.scrollIntoView()
+  }, [wide, go])
+
+  // 좁은 화면은 일반 스크롤이라 보이는 섹션으로 탭을 맞춘다
+  useEffect(() => {
+    if (wide) return
+    const obs = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && setMobileActive(e.target.id)), { threshold: 0.25 })
+    document.querySelectorAll('section[id]').forEach(s => obs.observe(s))
     return () => obs.disconnect()
   }, [wide])
 
-  const go = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-  // 안쪽 스크롤 컨테이너라 #주소가 저절로 맞춰지지 않는다
-  useEffect(() => { if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView() }, [])
+  const active = wide ? SECTIONS[cur][0] : mobileActive
+  const jump = id => wide ? go(SECTIONS.findIndex(([x]) => x === id)) : document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
   return (
     <ThemeProvider theme={theme} defaultMode="system">
@@ -364,24 +457,33 @@ export default function App() {
             <Typography sx={{ fontWeight: 800, fontSize: 20, px: 1.5, mb: 3 }}>김윤서</Typography>
             <List disablePadding>
               {SECTIONS.map(([id, label]) => (
-                <ListItemButton key={id} selected={active === id} onClick={() => go(id)}
+                <ListItemButton key={id} selected={active === id} onClick={() => jump(id)}
                   sx={{ borderRadius: 2, mb: .5, '&.Mui-selected': { color: 'primary.main', fontWeight: 700 } }}>{label}</ListItemButton>
               ))}
             </List>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', px: 1.5 }}>{profile.email}</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', px: 1.5 }}>{cur + 1} / {SECTIONS.length}</Typography>
           </Box>
         )}
-        <Box component="main" ref={main} sx={{ flex: 1, minWidth: 0, overflowY: { md: 'auto' }, scrollSnapType: { md: 'y mandatory' } }}>
+        <Box component="main" ref={main} sx={{ flex: 1, minWidth: 0, position: 'relative', overflow: { md: 'hidden' }, overscrollBehavior: 'none' }}>
           {!wide && (
             <Box component="nav" sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={active} variant="scrollable" onChange={(_, v) => go(v)}>
+              <Tabs value={active} variant="scrollable" onChange={(_, v) => jump(v)}>
                 {SECTIONS.map(([id, label]) => <Tab key={id} value={id} label={label} />)}
               </Tabs>
             </Box>
           )}
-          <Container maxWidth="xl" disableGutters>
+          <Box ref={track} sx={wide ? {
+            transform: `translate3d(0, ${-(track.current?.children[cur]?.offsetTop ?? 0)}px, 0)`, transition: 'transform .6s cubic-bezier(.22, .8, .3, 1)', willChange: 'transform',
+            '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+          } : null}>
             <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
-          </Container>
+          </Box>
+          {wide && cur < SECTIONS.length - 1 && (
+            <Box component="button" aria-label="다음 섹션" onClick={() => go(cur + 1)} sx={{
+              position: 'absolute', left: '50%', bottom: 12, transform: 'translateX(-50%)', border: 0, bgcolor: 'transparent',
+              color: 'text.secondary', cursor: 'pointer', display: 'grid', placeItems: 'center',
+            }}><KeyboardArrowDownRounded fontSize="large" /></Box>
+          )}
         </Box>
       </Box>
     </ThemeProvider>
