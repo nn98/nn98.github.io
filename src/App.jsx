@@ -11,7 +11,12 @@ import EmojiEventsRounded from '@mui/icons-material/EmojiEventsRounded'
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded'
 import { experiences, projects, IMG } from './data.js'
-import { profile, awards, olderProjects, diagrams, skillGroups } from './content.js'
+import { profile, awards, olderProjects, diagrams, skillGroups, projectResume, woowaResume } from './content.js'
+
+// 이력서 PDF 문구를 기존 데이터에 덮어 합친다
+const exps = experiences.map(e => e.title.startsWith('우아한테크코스')
+  ? { ...e, headline: woowaResume.headline, desc: [woowaResume.intro, ...e.desc.slice(1), woowaResume.extra] } : e)
+const projs = projects.map(p => ({ ...p, ...projectResume[p.title] }))
 
 const theme = createTheme({
   colorSchemes: {
@@ -136,18 +141,19 @@ function Hero() {
 
 function Experience({ wide }) {
   const [i, setI] = useState(0)
-  const e = experiences[i]
+  const e = exps[i]
   return (
     <Section id="experience" title="경력 & 활동" eyebrow="Experience">
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Tabs orientation={wide ? 'vertical' : 'horizontal'} variant="scrollable" value={i} onChange={(_, v) => setI(v)}
           sx={{ minWidth: { md: 240 }, borderRight: { md: 1 }, borderColor: { md: 'divider' }, flexShrink: 0 }}>
-          {experiences.map(x => <Tab key={x.title} sx={{ alignItems: 'flex-start', textAlign: 'left' }}
+          {exps.map(x => <Tab key={x.title} sx={{ alignItems: 'flex-start', textAlign: 'left' }}
             label={<Box><Typography sx={{ fontWeight: 700 }}>{x.title}</Typography><Typography variant="caption" color="text.secondary">{x.period}</Typography></Box>} />)}
         </Tabs>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Chip label={e.type} size="small" color="primary" variant="outlined" />
-          <Typography variant="h4" sx={{ mt: 1.5, fontSize: { xs: 24, md: 30 } }}>{e.title}</Typography>
+          {e.headline && <Typography color="primary" sx={{ mt: 1.5, fontWeight: 700 }}>{e.headline}</Typography>}
+          <Typography variant="h4" sx={{ mt: e.headline ? .5 : 1.5, fontSize: { xs: 24, md: 30 } }}>{e.title}</Typography>
           <Typography color="text.secondary" sx={{ mb: 3 }}>
             {e.role} · {e.period}{e.link && <> · <Link href={e.link} target="_blank" rel="noopener">학습 저장소</Link></>}
           </Typography>
@@ -201,13 +207,13 @@ function Trouble({ t }) {
 function Projects() {
   const [i, setI] = useState(0)
   const [open, setOpen] = useState(false)
-  const p = projects[i]
+  const p = projs[i]
   const pick = n => { setI(n); setOpen(false) }
   return (
     <Section id="projects" title="프로젝트" eyebrow="Projects">
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ alignItems: 'flex-start' }}>
         <Stack spacing={1.5} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0, position: { md: 'sticky' }, top: 0 }}>
-          {projects.map((x, n) => (
+          {projs.map((x, n) => (
             <Card key={x.title} sx={{ borderColor: n === i ? 'primary.main' : undefined, borderWidth: n === i ? 2 : 1 }}>
               <CardActionArea onClick={() => pick(n)} sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1.5, p: 1.5 }}>
                 <Box component="img" src={IMG[x.shots[0][0]]} alt="" sx={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'top', borderRadius: 2, flexShrink: 0 }} />
@@ -217,6 +223,7 @@ function Projects() {
           ))}
         </Stack>
         <Box sx={{ flex: 1, minWidth: 0 }}>
+          {p.headline && <Typography color="primary" sx={{ fontWeight: 700, fontSize: 17 }}>{p.headline}</Typography>}
           <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 38 } }}>{p.title}</Typography>
           <Typography sx={{ fontSize: 19, fontWeight: 600 }}>{p.summary}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{p.period} · {p.team}</Typography>
@@ -224,10 +231,26 @@ function Projects() {
           <Box sx={{ ...grid(210), my: 3 }}>{p.metrics.map(([n, l]) => <Stat key={l} n={n} l={l} />)}</Box>
           <Typography sx={{ fontSize: 16, lineHeight: 1.75 }}><Rich text={p.description} /></Typography>
           <Stack direction="row" sx={{ flexWrap: 'wrap', gap: .75, mt: 2 }}>{p.tech.map(t => <Chip key={t} label={t} size="small" />)}</Stack>
+          {p.highlights && <Box sx={{ mt: 3, p: { xs: 2, md: 3 }, borderRadius: '16px', bgcolor: soft }}>
+            <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>핵심</Typography>
+            <Box sx={{ fontSize: 16, lineHeight: 1.75 }}><Bullets xs={p.highlights} /></Box>
+          </Box>}
 
           {/* 기본은 접어 두고 필요할 때 펼친다 */}
           <Collapse in={open}>
             <Stack spacing={4} sx={{ mt: 4 }}>
+              {p.goal && <Box sx={grid(320, 3)}>
+                <Blk title="목표"><Bullets xs={p.goal} /></Blk>
+                <Blk title="시도"><Bullets xs={p.attempt} /></Blk>
+              </Box>}
+              {p.details && <Blk title="상세">
+                <Box sx={grid(320, 1.5)}>{p.details.map(([k, v]) => (
+                  <Paper key={k} sx={{ p: 2.5 }}>
+                    <Typography color="primary" sx={{ fontWeight: 700, mb: .75 }}>{k}</Typography>
+                    <Typography sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={v} /></Typography>
+                  </Paper>))}
+                </Box>
+              </Blk>}
               <Blk title="화면">
                 <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 1 }}>
                   {p.shots.map(([k, c]) => <Box key={k} component="figure" sx={{ m: 0, flexShrink: 0 }}>
@@ -255,7 +278,7 @@ function Projects() {
           </Collapse>
           <Button fullWidth variant={open ? 'text' : 'contained'} sx={{ mt: 3 }} onClick={() => setOpen(o => !o)}
             endIcon={open ? <ExpandLessRounded /> : <ExpandMoreRounded />}>
-            {open ? '접기' : `펼쳐서 보기 · 화면, 담당 업무, 트러블슈팅 ${p.troubleshooting.length}건`}
+            {open ? '접기' : `펼쳐서 보기 · 목표와 시도, 상세, 화면, 트러블슈팅 ${p.troubleshooting.length}건`}
           </Button>
         </Box>
       </Stack>
