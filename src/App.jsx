@@ -10,6 +10,7 @@ import ExpandLessRounded from '@mui/icons-material/ExpandLessRounded'
 import EmojiEventsRounded from '@mui/icons-material/EmojiEventsRounded'
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded'
+import KeyboardArrowUpRounded from '@mui/icons-material/KeyboardArrowUpRounded'
 import { experiences, projects, IMG } from './data.js'
 import { profile, awards, olderProjects, diagrams, skillGroups, projectResume, woowaResume } from './content.js'
 
@@ -392,9 +393,27 @@ function SkillsContact() {
 // 풀페이지 넘김: SaveEats /about과 같은 방식. 기본 스크롤 대신 휠, 스와이프, 키 방향을 받아
 // 트랙을 transform으로 한 장씩 옮긴다(합성 단계에서만 돌아 버벅이지 않는다).
 // 섹션 안 스크롤이 그 방향으로 더 내려갈 수 있으면 안쪽 스크롤에 양보한다
+// 첫 휠에 튕기며 강조되고, 한 번 더 굴리면 넘어간다는 신호
+function PageArrow({ dir, hint, onClick }) {
+  const on = Math.sign(hint) === dir
+  return (
+    <Box component="button" key={on ? hint : 0} aria-label={dir > 0 ? '다음 섹션' : '이전 섹션'} onClick={onClick} sx={{
+      position: 'absolute', left: '50%', [dir > 0 ? 'bottom' : 'top']: 12, transform: 'translateX(-50%)', border: 0,
+      bgcolor: on ? 'primary.main' : 'transparent', color: on ? 'primary.contrastText' : 'text.secondary',
+      borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'grid', placeItems: 'center',
+      transition: 'background-color .2s, color .2s',
+      animation: on ? 'nudge .7s cubic-bezier(.3,1.6,.5,1) 2' : 'none',
+      '@keyframes nudge': { '0%,100%': { translate: '0 0' }, '40%': { translate: `0 ${dir * 10}px` } },
+      '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+    }}>{dir > 0 ? <KeyboardArrowDownRounded fontSize="large" /> : <KeyboardArrowUpRounded fontSize="large" />}</Box>
+  )
+}
+
 function usePager(box, track, enabled) {
   const [cur, setCur] = useState(0)
-  const st = useRef({ cur: 0, busy: false, acc: 0, y0: null, inner: null })
+  // hint: 첫 휠에 화살표를 튕길 방향(부호). 값이 바뀌어야 애니메이션이 다시 돈다
+  const [hint, setHint] = useState(0)
+  const st = useRef({ cur: 0, busy: false, acc: 0, y0: null, inner: null, t: 0, fired: false, arm: 0, n: 0, ht: 0 })
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const go = useCallback(i => {
@@ -402,6 +421,7 @@ function usePager(box, track, enabled) {
     i = Math.min(n - 1, Math.max(0, i))
     if (i === s.cur || s.busy) return
     s.cur = i; s.busy = true; setCur(i)
+    s.arm = 0; clearTimeout(s.ht); setHint(0)
     setTimeout(() => { s.busy = false }, reduce ? 50 : 650)
   }, [track, reduce])
 
@@ -419,9 +439,18 @@ function usePager(box, track, enabled) {
       const dir = Math.sign(e.deltaY)
       if (canInner(e.target, dir)) { s.acc = 0; return }
       e.preventDefault()
+      // 250ms 넘게 끊기면 새 휠 동작으로 친다. 트랙패드 관성은 한 동작으로 묶인다
+      if (e.timeStamp - s.t > 250) { s.acc = 0; s.fired = false }
+      s.t = e.timeStamp
+      if (s.busy || s.fired) return
       s.acc += e.deltaY
       if (Math.abs(s.acc) < 40) return
-      go(s.cur + Math.sign(s.acc)); s.acc = 0
+      s.fired = true
+      const d = Math.sign(s.acc)
+      // 첫 동작은 화살표만 튕기고, 2.5초 안에 같은 방향으로 한 번 더 굴리면 넘긴다
+      if (s.arm === d) return go(s.cur + d)
+      s.arm = d; setHint(d * ++s.n)
+      clearTimeout(s.ht); s.ht = setTimeout(() => { s.arm = 0; setHint(0) }, 2500)
     }
     // 터치는 시작할 때 안쪽 스크롤이 끝에 닿아 있었는지를 본다
     const ts = e => { s.y0 = e.touches[0].clientY; s.inner = e.target }
@@ -444,14 +473,14 @@ function usePager(box, track, enabled) {
     return () => { el.removeEventListener('scroll', pin); el.removeEventListener('wheel', wheel); el.removeEventListener('touchstart', ts); el.removeEventListener('touchend', te); removeEventListener('keydown', key) }
   }, [box, enabled, go])
 
-  return [cur, go]
+  return [cur, go, hint]
 }
 
 export default function App() {
   const wide = useMediaQuery(theme.breakpoints.up('md'))
   const main = useRef(null)
   const track = useRef(null)
-  const [cur, go] = usePager(main, track, wide)
+  const [cur, go, hint] = usePager(main, track, wide)
   const [, setH] = useState(0)
   const [mobileActive, setMobileActive] = useState(SECTIONS[0][0])
 
@@ -509,12 +538,8 @@ export default function App() {
           } : null}>
             <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
           </Box>
-          {wide && cur < SECTIONS.length - 1 && (
-            <Box component="button" aria-label="다음 섹션" onClick={() => go(cur + 1)} sx={{
-              position: 'absolute', left: '50%', bottom: 12, transform: 'translateX(-50%)', border: 0, bgcolor: 'transparent',
-              color: 'text.secondary', cursor: 'pointer', display: 'grid', placeItems: 'center',
-            }}><KeyboardArrowDownRounded fontSize="large" /></Box>
-          )}
+          {wide && cur < SECTIONS.length - 1 && <PageArrow dir={1} hint={hint} onClick={() => go(cur + 1)} />}
+          {wide && hint < 0 && cur > 0 && <PageArrow dir={-1} hint={hint} onClick={() => go(cur - 1)} />}
         </Box>
       </Box>
     </ThemeProvider>
