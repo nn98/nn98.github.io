@@ -447,8 +447,8 @@ function usePager(box, track, enabled) {
       if (Math.abs(s.acc) < 40) return
       s.fired = true
       const d = Math.sign(s.acc)
-      // 첫 동작은 화살표만 튕기고, 2.5초 안에 같은 방향으로 한 번 더 굴리면 넘긴다
-      if (s.arm === d) return go(s.cur + d)
+      // 올라갈 땐 바로 넘긴다. 내려갈 땐 첫 동작에 화살표만 튕기고, 2.5초 안에 한 번 더 굴리면 넘긴다
+      if (d < 0 || s.arm === d) return go(s.cur + d)
       s.arm = d; setHint(d * ++s.n)
       clearTimeout(s.ht); s.ht = setTimeout(() => { s.arm = 0; setHint(0) }, 2500)
     }
@@ -539,7 +539,6 @@ export default function App() {
             <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
           </Box>
           {wide && cur < SECTIONS.length - 1 && <PageArrow dir={1} hint={hint} onClick={() => go(cur + 1)} />}
-          {wide && hint < 0 && cur > 0 && <PageArrow dir={-1} hint={hint} onClick={() => go(cur - 1)} />}
         </Box>
       </Box>
     </ThemeProvider>
