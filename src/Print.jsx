@@ -10,14 +10,16 @@ const TB = proj('Turbom (터봄)')
 const [woowa, baton, ta] = experiences
 const SITE = 'https://nn98.github.io/'
 
-// **굵게**, `코드`만 살린다
+// **굵게**, `코드`, [글자](주소)만 살린다
 function R({ t }) {
-  return t.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((p, i) =>
-    p.startsWith('**') ? <b key={i}>{p.slice(2, -2)}</b> : p.startsWith('`') ? <code key={i}>{p.slice(1, -1)}</code> : p)
+  return t.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/).map((p, i) =>
+    p.startsWith('[') ? <a key={i} href={p.slice(p.indexOf('](') + 2, -1)}>{p.slice(1, p.indexOf(']('))}</a>
+    : p.startsWith('**') ? <b key={i}>{p.slice(2, -2)}</b> : p.startsWith('`') ? <code key={i}>{p.slice(1, -1)}</code> : p)
 }
 
-// "주제어: 문장"을 굵은 주제어와 문장으로 나눈다
-const split = s => { const m = s.match(/^([^:：]{2,12}):\s*(.+)$/); return m ? [m[1], m[2]] : [null, s] }
+// [제목, 문장, 링크?] 카드와 목록
+const Det = ({ d: [k, v, u] }) => <div className="card"><h4>{u ? <a href={u}>{k}</a> : k}</h4><p><R t={v} /></p></div>
+const Topics = ({ xs }) => <ul className="topics">{xs.map(([k, v, u]) => <li key={k}><b>{u ? <a href={u}>{k}</a> : k}</b> <R t={v} /></li>)}</ul>
 
 function Page({ n, label, children }) {
   return (
@@ -43,9 +45,8 @@ function Flow({ f }) {
   )
 }
 
-// 트러블슈팅은 상황, 해결, 배움으로 줄인다. short면 해결만
-function Trouble({ t, short }) {
-  if (short) return <div className="tr"><h4>{t.issue}</h4><p><R t={t.solution} /></p></div>
+// 트러블슈팅은 상황, 해결, 배움으로 줄인다
+function Trouble({ t }) {
   return (
     <div className="tr">
       <h4>{t.issue}</h4>
@@ -112,11 +113,10 @@ export default function Print() {
       <Page n={2} label="Experience">
         <h3 className="first">경력과 활동</h3>
         <div className="exp">
-          <div className="eh"><h4>{woowa.title}</h4><span>{woowa.period}</span></div>
+          <div className="eh"><h4>{woowa.title} <a href={woowa.link}>학습 저장소</a></h4><span>{woowaResume.period}</span></div>
           <div className="meta">{woowa.role} · {woowaResume.headline}</div>
-          <p>{woowaResume.intro}</p>
-          <ul>{woowa.desc.slice(1).map(d => { const [k, v] = split(d); return <li key={d}>{k && <b>{k} </b>}{v}</li> })}</ul>
-          <p className="muted">{woowaResume.extra}</p>
+          <Bul xs={woowaResume.overview} />
+          <Topics xs={woowaResume.details} />
         </div>
         {[baton, ta].map(e => (
           <div key={e.title} className="exp">
@@ -136,6 +136,7 @@ export default function Print() {
       {/* 3. SaveEats 개요: 무엇을, 얼마나, 어떻게 */}
       <Page n={3} label="Project · SaveEats">
         <ProjectHead p={SE} sub={SE.headline} />
+        <p><b>{SE.overview}</b></p>
         <Stats xs={SE.metrics} />
         <p>{SE.description}</p>
         <h3>핵심</h3>
@@ -156,7 +157,7 @@ export default function Print() {
           <div><h3 className="first">시도</h3><Bul xs={SE.attempt} /></div>
         </div>
         <h3>상세</h3>
-        <div className="g2 det">{SE.details.map(([k, v]) => <div key={k} className="card"><h4>{k}</h4><p><R t={v} /></p></div>)}</div>
+        <Topics xs={SE.details} />
       </Page>
 
       {/* 5. SaveEats 트러블슈팅 */}
@@ -173,16 +174,18 @@ export default function Print() {
       {/* 6. Turbom: 한 장에 개요부터 트러블슈팅까지 */}
       <Page n={6} label="Project · Turbom">
         <ProjectHead p={TB} sub={TB.headline} />
+        <p><b>{TB.overview}</b></p>
         <Stats xs={TB.metrics} />
-        <p>{TB.description}</p>
         <h3>핵심</h3>
         <Bul xs={TB.highlights} />
         <h3>도메인 모델</h3>
         {diagrams[2].flows.map(f => <Flow key={f.label} f={f} />)}
         <h3>결정의 근거</h3>
-        <div className="g3">{TB.details.map(([k, v]) => <div key={k} className="card"><h4>{k}</h4><p><R t={v} /></p></div>)}</div>
-        <h3>트러블슈팅</h3>
-        <div className="g2">{TB.troubleshooting.map(t => <Trouble key={t.issue} t={t} short />)}</div>
+        <div className="g3">{TB.details.map(d => <Det key={d[0]} d={d} />)}</div>
+        <div className="g2">
+          <div><h3 className="first">목표</h3><Bul xs={TB.goal} /></div>
+          <div><h3 className="first">시도</h3><Bul xs={TB.attempt} /></div>
+        </div>
         <Chips xs={TB.tech} />
         <div className="links">{TB.links.map(([l, u]) => <a key={l} href={u}>{l}</a>)}</div>
       </Page>
@@ -258,6 +261,9 @@ a { color: var(--c); text-decoration: none }
 .shots figcaption { font-size: 10px; color: var(--mute) }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto }
 .chips span { font-size: 10.5px; background: #f0f2f5; border-radius: 999px; padding: 2px 8px }
+.topics li b { margin-right: 4px }
+.topics b a { color: var(--c) }
+.card h4 a { color: inherit; text-decoration: underline; text-decoration-color: #b9c7d8; text-underline-offset: 2px }
 .links { display: flex; gap: 14px; font-size: 11.5px; font-weight: 600 }
 .det .card p { font-size: 11.5px }
 .trs { display: grid; gap: 10px }

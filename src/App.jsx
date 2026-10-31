@@ -15,8 +15,7 @@ import { experiences, projects, IMG } from './data.js'
 import { profile, awards, olderProjects, diagrams, skillGroups, projectResume, woowaResume } from './content.js'
 
 // 이력서 PDF 문구를 기존 데이터에 덮어 합친다
-const exps = experiences.map(e => e.title.startsWith('우아한테크코스')
-  ? { ...e, headline: woowaResume.headline, desc: [woowaResume.intro, ...e.desc.slice(1), woowaResume.extra] } : e)
+const exps = experiences.map(e => e.title.startsWith('우아한테크코스') ? { ...e, ...woowaResume } : e)
 const projs = projects.map(p => ({ ...p, ...projectResume[p.title] }))
 
 const theme = createTheme({
@@ -56,10 +55,11 @@ const SECTIONS = [
 const grid = (min, gap = 2) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap })
 const soft = t => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.14 : 0.07)
 
-// **굵게**, `코드` 표기를 그대로 살려 그린다
+// **굵게**, `코드`, [글자](주소) 표기를 그대로 살려 그린다
 function Rich({ text }) {
-  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((p, i) =>
-    p.startsWith('**') ? <Box key={i} component="strong" sx={{ color: 'primary.main', fontWeight: 700 }}>{p.slice(2, -2)}</Box>
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/).map((p, i) =>
+    p.startsWith('[') ? <Link key={i} href={p.slice(p.indexOf('](') + 2, -1)} target="_blank" rel="noopener">{p.slice(1, p.indexOf(']('))}</Link>
+    : p.startsWith('**') ? <Box key={i} component="strong" sx={{ color: 'primary.main', fontWeight: 700 }}>{p.slice(2, -2)}</Box>
       : p.startsWith('`') ? <Box key={i} component="code" sx={{ fontFamily: 'ui-monospace, monospace', fontSize: '.9em', px: .5, borderRadius: 1, bgcolor: 'action.hover' }}>{p.slice(1, -1)}</Box>
         : p)
 }
@@ -168,7 +168,8 @@ function Experience({ wide }) {
           <Typography color="text.secondary" sx={{ mb: 3 }}>
             {e.role} · <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{e.period}</Box>{e.link && <> · <Link href={e.link} target="_blank" rel="noopener">학습 저장소</Link></>}
           </Typography>
-          <Box sx={grid(320)}>
+          {e.overview && <Box sx={{ mb: 2.5, fontSize: 16, lineHeight: 1.75 }}><Bullets xs={e.overview} /></Box>}
+          {e.details ? <Box sx={grid(320)}>{e.details.map(d => <Detail key={d[0]} d={d} />)}</Box> : <Box sx={grid(320)}>
             {e.desc.map(d => {
               // "책임 분리: ..." 처럼 앞에 붙은 주제어를 카드 제목으로 올린다
               const m = d.match(/^([^:]{2,12}): (.*)$/)
@@ -179,10 +180,22 @@ function Experience({ wide }) {
                 </Paper>
               )
             })}
-          </Box>
+          </Box>}
         </Box>
       </Stack>
     </Section>
+  )
+}
+
+// [제목, 문장, 링크?] 카드. 링크가 있으면 제목을 누른다
+function Detail({ d: [k, v, u] }) {
+  return (
+    <Paper sx={{ p: 2.5 }}>
+      <Typography color="primary" sx={{ fontWeight: 700, mb: .75 }}>
+        {u ? <Link href={u} target="_blank" rel="noopener" underline="hover">{k} ↗</Link> : k}
+      </Typography>
+      <Typography sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={v} /></Typography>
+    </Paper>
   )
 }
 
@@ -238,6 +251,7 @@ function Projects() {
           <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 38 } }}>{p.title}</Typography>
           <Typography sx={{ fontSize: 19, fontWeight: 600 }}>{p.summary}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{p.period} · {p.team}</Typography>
+          {p.overview && <Typography sx={{ mt: 1 }}>{p.overview}</Typography>}
           <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mt: 1.5 }}>{p.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}</Stack>
           <Box sx={{ ...grid(210), my: 3 }}>{p.metrics.map(([n, l]) => <Stat key={l} n={n} l={l} />)}</Box>
           <Typography sx={{ fontSize: 16, lineHeight: 1.75 }}><Rich text={p.description} /></Typography>
@@ -255,12 +269,7 @@ function Projects() {
                 <Blk title="시도"><Bullets xs={p.attempt} /></Blk>
               </Box>}
               {p.details && <Blk title="상세">
-                <Box sx={grid(320, 1.5)}>{p.details.map(([k, v]) => (
-                  <Paper key={k} sx={{ p: 2.5 }}>
-                    <Typography color="primary" sx={{ fontWeight: 700, mb: .75 }}>{k}</Typography>
-                    <Typography sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={v} /></Typography>
-                  </Paper>))}
-                </Box>
+                <Box sx={grid(320, 1.5)}>{p.details.map(d => <Detail key={d[0]} d={d} />)}</Box>
               </Blk>}
               <Blk title="화면">
                 <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 1 }}>

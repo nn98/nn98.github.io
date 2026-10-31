@@ -1,5 +1,5 @@
 export const experiences = [
-  { title: '우아한테크코스 8기', role: '백엔드 교육생, (주)우아한형제들', period: '2026. 02 ~ 2026. 10', type: 'EDUCATION',
+  { title: '우아한테크코스 8기', role: '백엔드 교육생, 우아한형제들', period: '2026. 02 ~ 2026. 10', type: 'EDUCATION',
     link: 'https://github.com/nn98/java-woowacourse-8',
     desc: [
       '코드 구조(블랙잭, 장기)에서 저장과 경계(방탈출), 프레임워크가 숨기던 자원(톰캣, MVC, JDBC)으로 넓혔습니다. 미션 PR 27개에서 지적마다 고칠지 유지할지 근거를 글로 답했습니다.',
@@ -129,7 +129,7 @@ export const projects = [
     meaning: '짧은 해커톤 기간에도 데이터를 증거로 모델을 세워 3등을 받았고, 출품 뒤에도 감사와 이전을 이어 가며 서비스를 다듬었습니다.',
     improvements: ['배포 첫 확인을 원 동기 사례로 자동화', '분리 규칙을 다른 상권 데이터로 검증'],
     logs: [['2026. 07', '9일 팀 4인 개발 시작, 우아한바톤 3등, 23일까지 데이터 감사, MySQL 이전, 부팅 9초']],
-    links: [['Server', TS], ['Client', 'https://github.com/nn98/turbom-client'], ['의사결정 기록', SPEC]],
+    links: [['서비스', 'https://turbom-client.vercel.app/'], ['Server', TS], ['Client', 'https://github.com/nn98/turbom-client'], ['의사결정 기록', SPEC]],
   },
 ];
 
