@@ -47,7 +47,7 @@ const theme = createTheme({
 })
 
 const SECTIONS = [
-  ['profile', 'Profile'], ['experience', 'Experience'], ['projects', 'Projects'], ['design', 'Design'],
+  ['profile', 'Profile'], ['experience', 'Experience'], ['projects', 'Projects'], ['architecture', 'Architecture'],
   ['awards', 'Awards'], ['skills', 'Skills & Contact'],
 ]
 
@@ -109,7 +109,7 @@ function Hero() {
             <Stack direction="row" spacing={3} sx={{ alignItems: 'center' }}>
               <Avatar src={IMG.profile} alt="김윤서 프로필 사진" sx={{ width: { xs: 96, md: 128 }, height: { xs: 96, md: 128 } }} />
               <Box>
-                <Chip label="현재 구직 중" color="primary" size="small" variant="outlined" sx={{ mb: 1 }} />
+                <Chip label="구직 중" color="primary" size="small" variant="outlined" sx={{ mb: 1 }} />
                 <Typography variant="h1" sx={{ fontSize: { xs: 44, md: 60 } }}>{profile.name}</Typography>
                 <Typography variant="h5" color="primary" sx={{ minHeight: '1.5em', fontWeight: 600, fontSize: { xs: 19, sm: 24 } }}>{profile.roles[r]}</Typography>
               </Box>
@@ -122,19 +122,28 @@ function Hero() {
               <Button size="small" variant="outlined" href={`tel:${profile.phone}`}>{profile.phone}</Button>
               <Button size="small" variant="outlined" href="#print">PDF 버전</Button>
             </Stack>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
+              <Card sx={{ borderRadius: '16px' }}>
+                <CardActionArea href={profile.service.url} target="_blank" rel="noopener" sx={{ p: { xs: 2, md: 2.5 }, height: '100%' }}>
+                  <Typography variant="overline" color="primary" sx={{ fontWeight: 700, lineHeight: 1.6 }}>운영 중인 서비스</Typography>
+                  <Typography sx={{ fontWeight: 800, fontSize: { xs: 22, md: 28 }, lineHeight: 1.15, display: 'flex', alignItems: 'center', gap: .5 }}>
+                    {profile.service.name}<OpenInNewRounded fontSize="small" color="primary" />
+                  </Typography>
+                  <Typography color="text.secondary" sx={{ mt: .75, fontSize: 14 }}>{profile.service.desc}</Typography>
+                </CardActionArea>
+              </Card>
+              <Stat n={profile.users[0]} l={profile.users[1]} big />
+            </Box>
           </Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
-            {profile.stats.map(([n, l]) => <Stat key={l} n={n} l={l} big />)}
-          </Box>
-        </Box>
-        <Box sx={grid(280)}>
+          <Stack spacing={2}>
           {profile.summary.map(s => (
-            <Paper key={s.label} sx={{ p: 3 }}>
+            <Paper key={s.label} sx={{ p: { xs: 2.5, md: 2.5 } }}>
               <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>{s.label}</Typography>
               <Typography sx={{ fontSize: 19, fontWeight: 700, mb: 1 }}>{s.head}</Typography>
               <Typography color="text.secondary" sx={{ fontSize: 15, lineHeight: 1.7 }}><Rich text={s.text} /></Typography>
             </Paper>
           ))}
+          </Stack>
         </Box>
         <Box sx={grid(170, 1.5)}>
           {profile.info.map(([k, v, d]) => (
@@ -318,11 +327,11 @@ function Node({ n: [t, s, key] }) {
   )
 }
 
-function Design() {
+function Architecture() {
   const [i, setI] = useState(0)
   const d = diagrams[i]
   return (
-    <Section id="design" title="구성도와 도메인 모델" eyebrow="Design">
+    <Section id="architecture" title="아키텍처" eyebrow="Architecture">
       <Tabs value={i} onChange={(_, v) => setI(v)} variant="scrollable" sx={{ mb: 3 }}>
         {diagrams.map(x => <Tab key={x.title} label={x.title} sx={{ fontSize: 16 }} />)}
       </Tabs>
@@ -542,7 +551,7 @@ export default function App() {
             transform: `translate3d(0, ${-(h ? cur * h : track.current?.children[cur]?.offsetTop ?? 0)}px, 0)`, transition: 'transform .6s cubic-bezier(.22, .8, .3, 1)', willChange: 'transform',
             '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           }}>
-            <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
+            <Hero /><Experience wide={wide} /><Projects /><Architecture /><Awards /><SkillsContact />
           </Box>
           {wide && cur < SECTIONS.length - 1 && <PageArrow dir={1} hint={hint} onClick={() => go(cur + 1)} />}
         </Box>

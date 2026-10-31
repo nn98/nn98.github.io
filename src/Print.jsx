@@ -100,7 +100,10 @@ export default function Print() {
         </div>
         <p className="lead">{profile.tagline}</p>
         <p className="muted">{profile.bio}</p>
-        <Stats xs={profile.stats} />
+        <div className="g2">
+          <a className="stat svc" href={profile.service.url}><b>{profile.service.name} ↗</b><span>운영 중인 서비스 · {profile.service.desc}</span><span>{profile.service.url.replace('https://', '')}</span></a>
+          <div className="stat"><b>{profile.users[0]}</b><span>{profile.users[1]}</span></div>
+        </div>
         <h3>핵심 역량</h3>
         <div className="g3">{profile.summary.map(s => <div key={s.head} className="card"><em>{s.label}</em><h4>{s.head}</h4><p><R t={s.text} /></p></div>)}</div>
         <h3>기술 스택</h3>
@@ -141,7 +144,7 @@ export default function Print() {
         <p>{SE.description}</p>
         <h3>핵심</h3>
         <Bul xs={SE.highlights} />
-        <h3>시스템 구성</h3>
+        <h3>아키텍처</h3>
         <p className="muted">{diagrams[0].desc}</p>
         {diagrams[0].flows.map(f => <Flow key={f.label} f={f} />)}
         <div className="shots">{SE.shots.map(([k, c]) => <figure key={k}><img src={IMG[k]} alt="" /><figcaption>{c}</figcaption></figure>)}</div>
@@ -231,6 +234,7 @@ a { color: var(--c); text-decoration: none }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
 .stat { background: var(--soft); border-radius: 10px; padding: 10px 12px }
 .stat b { display: block; color: var(--c); font-size: 19px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; line-height: 1.2 }
+.stat.svc { border: 1.5px solid var(--c); background: #fff }
 .stat span { font-size: 10.5px; color: var(--mute); line-height: 1.35; display: block; margin-top: 2px }
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px }
 .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
