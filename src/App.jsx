@@ -34,6 +34,8 @@ const theme = createTheme({
   },
   components: {
     MuiCssBaseline: { styleOverrides: { body: { wordBreak: 'keep-all', overflowWrap: 'break-word', overscrollBehavior: 'none' },
+      'h1, h2, h3, h4, h5, h6': { textWrap: 'balance' },
+      'p, li': { textWrap: 'pretty' },
       '*': { scrollbarWidth: 'thin', scrollbarColor: 'rgba(128,128,128,.35) transparent' },
       '*::-webkit-scrollbar': { width: 8, height: 8 },
       '*::-webkit-scrollbar-track': { background: 'transparent' },
@@ -109,7 +111,7 @@ function Hero() {
               <Box>
                 <Chip label="현재 구직 중" color="primary" size="small" variant="outlined" sx={{ mb: 1 }} />
                 <Typography variant="h1" sx={{ fontSize: { xs: 44, md: 60 } }}>{profile.name}</Typography>
-                <Typography variant="h5" color="primary" sx={{ minHeight: '1.5em', fontWeight: 600 }}>{profile.roles[r]}</Typography>
+                <Typography variant="h5" color="primary" sx={{ minHeight: '1.5em', fontWeight: 600, fontSize: { xs: 19, sm: 24 } }}>{profile.roles[r]}</Typography>
               </Box>
             </Stack>
             <Typography sx={{ fontSize: { xs: 20, md: 24 }, fontWeight: 700, lineHeight: 1.45 }}>{profile.tagline}</Typography>
@@ -163,7 +165,7 @@ function Experience({ wide }) {
           {e.headline && <Typography color="primary" sx={{ mt: 1.5, fontWeight: 700 }}>{e.headline}</Typography>}
           <Typography variant="h4" sx={{ mt: e.headline ? .5 : 1.5, fontSize: { xs: 24, md: 30 } }}>{e.title}</Typography>
           <Typography color="text.secondary" sx={{ mb: 3 }}>
-            {e.role} · {e.period}{e.link && <> · <Link href={e.link} target="_blank" rel="noopener">학습 저장소</Link></>}
+            {e.role} · <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{e.period}</Box>{e.link && <> · <Link href={e.link} target="_blank" rel="noopener">학습 저장소</Link></>}
           </Typography>
           <Box sx={grid(320)}>
             {e.desc.map(d => {
@@ -319,11 +321,12 @@ function Design() {
         {d.flows.map(f => (
           <Stack key={f.label} direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
             <Typography variant="overline" color="primary" sx={{ width: 56, flexShrink: 0, fontSize: 14, fontWeight: 700 }}>{f.label}</Typography>
-            <Stack direction="row" sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+            {/* 좁은 화면은 세로로 쌓고 화살표를 아래로 돌린다. 줄바꿈으로 화살표만 남는 일이 없다 */}
+            <Stack direction={{ xs: 'column', md: 'row' }} sx={{ flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'center' }, gap: 1 }}>
               {f.nodes.map((n, k) => typeof n === 'string'
-                ? <Stack key={k} sx={{ alignItems: 'center', color: 'text.secondary', minWidth: 40 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, minHeight: '1.2em' }}>{n}</Typography>
-                    <ArrowForwardRounded fontSize="large" />
+                ? <Stack key={k} direction={{ xs: 'row-reverse', md: 'column' }} sx={{ alignItems: 'center', justifyContent: 'center', gap: { xs: 1, md: 0 }, color: 'text.secondary', minWidth: 40 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, minHeight: '1.2em', minWidth: { xs: 40, md: 0 } }}>{n}</Typography>
+                    <ArrowForwardRounded fontSize="large" sx={{ rotate: { xs: '90deg', md: '0deg' } }} />
                   </Stack>
                 : <Node key={k} n={n} />)}
             </Stack>
@@ -341,10 +344,10 @@ function Awards() {
         {awards.map(([d, name, sub, prize]) => (
           <Fragment key={name}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', py: 2 }}>
-              <EmojiEventsRounded color="primary" fontSize="large" />
-              <Typography color="text.secondary" sx={{ width: 80, flexShrink: 0 }}>{d}</Typography>
-              <Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 700, fontSize: 17 }}>{name}</Typography><Typography variant="body2" color="text.secondary">{sub}</Typography></Box>
-              <Typography color="primary" sx={{ fontWeight: 800, fontSize: 20 }}>{prize}</Typography>
+              <EmojiEventsRounded color="primary" fontSize="large" sx={{ display: { xs: 'none', sm: 'block' } }} />
+              <Typography color="text.secondary" sx={{ width: 80, flexShrink: 0, display: { xs: 'none', sm: 'block' } }}>{d}</Typography>
+              <Box sx={{ flex: 1 }}><Typography variant="caption" color="text.secondary" sx={{ display: { sm: 'none' } }}>{d}</Typography><Typography sx={{ fontWeight: 700, fontSize: 17 }}>{name}</Typography><Typography variant="body2" color="text.secondary">{sub}</Typography></Box>
+              <Typography color="primary" sx={{ fontWeight: 800, fontSize: { xs: 17, sm: 20 }, textAlign: 'right', flexShrink: 0, maxWidth: '30%' }}>{prize}</Typography>
             </Stack>
             <Divider />
           </Fragment>
@@ -525,7 +528,7 @@ export default function App() {
         {/* 섹션 높이는 main 높이를 따른다. 좁은 화면은 위 탭을 뺀 높이 */}
         <Box component="main" ref={main} style={{ '--page-h': h ? h + 'px' : undefined }} sx={{ flex: 1, minWidth: 0, minHeight: 0, position: 'relative', overflow: 'hidden', overscrollBehavior: 'none' }}>
           <Box ref={track} sx={{
-            transform: `translate3d(0, ${-(track.current?.children[cur]?.offsetTop ?? 0)}px, 0)`, transition: 'transform .6s cubic-bezier(.22, .8, .3, 1)', willChange: 'transform',
+            transform: `translate3d(0, ${-(h ? cur * h : track.current?.children[cur]?.offsetTop ?? 0)}px, 0)`, transition: 'transform .6s cubic-bezier(.22, .8, .3, 1)', willChange: 'transform',
             '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
           }}>
             <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
