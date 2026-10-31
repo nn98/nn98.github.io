@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, Fragment } from 'react'
 import {
   Avatar, Box, Button, Card, CardActionArea, Chip, Collapse, CssBaseline, Divider, Link,
-  List, ListItemButton, Paper, Stack, Tab, Tabs, ThemeProvider, Typography, createTheme, useMediaQuery,
+  List, ListItemButton, Paper, Stack, Tab, Tabs, ThemeProvider, Tooltip, Typography, createTheme, useMediaQuery,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded'
@@ -11,6 +11,8 @@ import EmojiEventsRounded from '@mui/icons-material/EmojiEventsRounded'
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded'
 import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded'
 import KeyboardArrowUpRounded from '@mui/icons-material/KeyboardArrowUpRounded'
+import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded'
+import CheckRounded from '@mui/icons-material/CheckRounded'
 import { experiences, projects, IMG } from './data.js'
 import { profile, awards, olderProjects, diagrams, skillGroups, projectResume, woowaResume } from './content.js'
 
@@ -90,6 +92,25 @@ function Section({ id, title, eyebrow, children }) {
   )
 }
 
+// 메일, 전화 링크는 아티팩트 화면에서 막혀서 누르면 복사한다
+function CopyButton({ text, ...props }) {
+  const [done, setDone] = useState(false)
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text) } catch {
+      // 권한이 막힌 iframe에서는 옛 방식으로
+      const t = Object.assign(document.createElement('textarea'), { value: text })
+      document.body.append(t); t.select(); document.execCommand('copy'); t.remove()
+    }
+    setDone(true); setTimeout(() => setDone(false), 1500)
+  }
+  return (
+    <Tooltip title="복사됨" open={done} arrow placement="top">
+      <Button {...props} onClick={copy} aria-label={`${text} 복사`}
+        endIcon={done ? <CheckRounded fontSize="small" /> : <ContentCopyRounded fontSize="small" />}>{text}</Button>
+    </Tooltip>
+  )
+}
+
 function ExtLink({ href, children }) {
   return <Button size="small" variant="outlined" href={href} target="_blank" rel="noopener" endIcon={<OpenInNewRounded fontSize="small" />}>{children}</Button>
 }
@@ -118,8 +139,8 @@ function Hero() {
             <Typography color="text.secondary" sx={{ fontSize: 16 }}>{profile.bio}</Typography>
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
               {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
-              <Button size="small" variant="contained" href={`mailto:${profile.email}`}>{profile.email}</Button>
-              <Button size="small" variant="outlined" href={`tel:${profile.phone}`}>{profile.phone}</Button>
+              <CopyButton size="small" variant="contained" text={profile.email} />
+              <CopyButton size="small" variant="outlined" text={profile.phone} />
               <Button size="small" variant="outlined" href="#print">PDF 버전</Button>
             </Stack>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
@@ -403,8 +424,8 @@ function SkillsContact() {
       <Box sx={{ mt: 5, py: 4, textAlign: 'center' }}>
         <Typography variant="h4" sx={{ mb: 3 }}>함께 일할 기회를 찾고 있습니다</Typography>
         <Stack direction="row" sx={{ justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
-          <Button variant="contained" size="large" href={`mailto:${profile.email}`}>{profile.email}</Button>
-          <Button variant="outlined" size="large" href={`tel:${profile.phone}`}>{profile.phone}</Button>
+          <CopyButton variant="contained" size="large" text={profile.email} />
+          <CopyButton variant="outlined" size="large" text={profile.phone} />
           <Button variant="outlined" size="large" href="#print">PDF 버전</Button>
           {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
         </Stack>
