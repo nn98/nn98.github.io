@@ -110,6 +110,7 @@ function Hero() {
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
               {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
               <Button size="small" variant="contained" href={`mailto:${profile.email}`}>{profile.email}</Button>
+              <Button size="small" variant="outlined" href={`tel:${profile.phone}`}>{profile.phone}</Button>
             </Stack>
           </Stack>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
@@ -374,6 +375,7 @@ function SkillsContact() {
         <Typography variant="h4" sx={{ mb: 3 }}>함께 일할 기회를 찾고 있습니다</Typography>
         <Stack direction="row" sx={{ justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
           <Button variant="contained" size="large" href={`mailto:${profile.email}`}>{profile.email}</Button>
+          <Button variant="outlined" size="large" href={`tel:${profile.phone}`}>{profile.phone}</Button>
           {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
         </Stack>
       </Box>

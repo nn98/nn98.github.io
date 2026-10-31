@@ -26,6 +26,7 @@ export const profile = {
     ['위치', '경기 고양시', ''],
   ],
   email: 'jkllhgb@gmail.com',
+  phone: '010-6450-7144',
   links: [['GitHub', 'https://github.com/nn98'], ['Velog', 'https://velog.io/@nn98']],
 }
 

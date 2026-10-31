@@ -87,7 +87,7 @@ export const projects = [
       ['2026. 09', '21일 수집 누락 장애 대응, 누락 방어와 자동 롤백 배포 도입'],
       ['2026. 10', '메인 화면 A/B(5 ~ 17일) 링크 클릭률 +17%, 17일 실시간 인기 순위 추가'],
     ],
-    links: [['서비스', 'https://beggars-five.vercel.app'], ['팀 저장소', M], ['API', API], ['Web', 'https://github.com/nn98/delivery-discount-web'], ['화면 변천', MB + 'docs/screen-history/README.md']],
+    links: [['서비스', 'https://beggars-five.vercel.app'], ['랜딩 페이지', 'https://beggars-five.vercel.app/about'], ['팀 저장소', M], ['API', API], ['Web', 'https://github.com/nn98/delivery-discount-web'], ['화면 변천', MB + 'docs/screen-history/README.md']],
   },
   {
     title: 'Turbom (터봄)', summary: '상가 주소별 개/폐업 이력 조회 서비스',
