@@ -147,7 +147,7 @@ export const olderProjects = [
     tech: ['Spring Boot 3', 'Spring Security', 'OAuth'], links: [] },
   { title: 'Solved.SKHU', period: '2022. 03 ~ 2022. 10', role: '팀장, 기획, 백엔드', summary: '백준 풀이 데이터로 문제 추천과 랭킹을 주는 교내 프로그래밍 저지 서포터',
     points: ['교내 경진대회 은상, 인기상'], tech: ['Node.js', 'MySQL', 'Oracle Cloud'],
-    links: [['GitHub', 'https://github.com/nn98/Solved.SKHU'], ['서비스', 'https://sol-skhu.vercel.app/']] },
+    links: [['GitHub', 'https://github.com/nn98/Solved.SKHU']] },
   { title: 'Monity', period: '2018. 11 ~ 2019. 04', role: '팀장, 풀스택', summary: '강의실 PC 상태와 수업 현황을 모니터링하는 앱',
     points: ['Android 클라이언트, Node.js 서버 개발과 운영', '교내 SW 경진대회 동상'], tech: ['Android', 'Java', 'Node.js', 'MySQL'],
     links: [['GitHub', 'https://github.com/nn98/SW_Competition_2019']] },
