@@ -33,7 +33,7 @@ const theme = createTheme({
     button: { textTransform: 'none', fontWeight: 600 },
   },
   components: {
-    MuiCssBaseline: { styleOverrides: { body: { wordBreak: 'keep-all', overflowWrap: 'break-word' },
+    MuiCssBaseline: { styleOverrides: { body: { wordBreak: 'keep-all', overflowWrap: 'break-word', overscrollBehavior: 'none' },
       '*': { scrollbarWidth: 'thin', scrollbarColor: 'rgba(128,128,128,.35) transparent' },
       '*::-webkit-scrollbar': { width: 8, height: 8 },
       '*::-webkit-scrollbar-track': { background: 'transparent' },
@@ -75,15 +75,15 @@ function Stat({ n, l, big }) {
 function Section({ id, title, eyebrow, children }) {
   return (
     <Box component="section" id={id} sx={{
-      height: { md: '100dvh' }, display: 'flex', flexDirection: 'column',
-      py: { xs: 6, md: 5 }, px: { xs: 2, md: 6 }, maxWidth: 1400, mx: 'auto', width: '100%',
+      height: 'var(--page-h, 100dvh)', display: 'flex', flexDirection: 'column',
+      py: { xs: 3, md: 5 }, px: { xs: 2, md: 6 }, maxWidth: 1400, mx: 'auto', width: '100%',
     }}>
       {title && <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', mb: 3, flexShrink: 0 }}>
         <Typography variant="h3" component="h2" sx={{ fontSize: { xs: 28, md: 36 } }}>{title}</Typography>
         <Typography variant="overline" color="text.secondary">{eyebrow}</Typography>
       </Stack>}
       {/* 화면 한 장에 들어가지 않는 내용은 섹션 안에서 스크롤. 넘김 스크립트가 data-scroll을 보고 판단한다 */}
-      <Box data-scroll sx={{ flex: 1, minHeight: 0, overflowY: { md: 'auto' }, overscrollBehavior: 'contain', pr: { md: 1 } }}>{children}</Box>
+      <Box data-scroll sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', pr: { md: 1 } }}>{children}</Box>
     </Box>
   )
 }
@@ -453,11 +453,11 @@ function usePager(box, track, enabled) {
       clearTimeout(s.ht); s.ht = setTimeout(() => { s.arm = 0; setHint(0) }, 2500)
     }
     // 터치는 시작할 때 안쪽 스크롤이 끝에 닿아 있었는지를 본다
-    const ts = e => { s.y0 = e.touches[0].clientY; s.inner = e.target }
+    const ts = e => { s.y0 = e.touches[0].clientY; s.inner = { 1: canInner(e.target, 1), '-1': canInner(e.target, -1) } }
     const te = e => {
       if (s.y0 === null) return
       const dy = s.y0 - e.changedTouches[0].clientY; s.y0 = null
-      if (Math.abs(dy) > 40 && !canInner(s.inner, Math.sign(dy))) go(s.cur + Math.sign(dy))
+      if (Math.abs(dy) > 40 && !s.inner[Math.sign(dy)]) go(s.cur + Math.sign(dy))
     }
     const key = e => {
       const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key]
@@ -480,9 +480,8 @@ export default function App() {
   const wide = useMediaQuery(theme.breakpoints.up('md'))
   const main = useRef(null)
   const track = useRef(null)
-  const [cur, go, hint] = usePager(main, track, wide)
-  const [, setH] = useState(0)
-  const [mobileActive, setMobileActive] = useState(SECTIONS[0][0])
+  const [cur, go, hint] = usePager(main, track, true)
+  const [h, setH] = useState(0)
 
   useEffect(() => {
     // 크기가 바뀌면 다시 그려 섹션 위치(offsetTop)를 새로 읽는다
@@ -494,24 +493,16 @@ export default function App() {
   // #주소로 들어오면 그 섹션부터
   useEffect(() => {
     const i = SECTIONS.findIndex(([id]) => '#' + id === location.hash)
-    if (i > 0) wide ? go(i) : document.getElementById(SECTIONS[i][0])?.scrollIntoView()
-  }, [wide, go])
+    if (i > 0) go(i)
+  }, [go])
 
-  // 좁은 화면은 일반 스크롤이라 보이는 섹션으로 탭을 맞춘다
-  useEffect(() => {
-    if (wide) return
-    const obs = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && setMobileActive(e.target.id)), { threshold: 0.25 })
-    document.querySelectorAll('section[id]').forEach(s => obs.observe(s))
-    return () => obs.disconnect()
-  }, [wide])
-
-  const active = wide ? SECTIONS[cur][0] : mobileActive
-  const jump = id => wide ? go(SECTIONS.findIndex(([x]) => x === id)) : document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  const active = SECTIONS[cur][0]
+  const jump = id => go(SECTIONS.findIndex(([x]) => x === id))
 
   return (
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: { md: '100dvh' } }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100dvh' }}>
         {wide && (
           <Box component="nav" aria-label="목차" sx={{ width: 200, flexShrink: 0, borderRight: 1, borderColor: 'divider', py: 5, px: 2, display: 'flex', flexDirection: 'column' }}>
             <Typography sx={{ fontWeight: 800, fontSize: 20, px: 1.5, mb: 3 }}>김윤서</Typography>
@@ -524,18 +515,19 @@ export default function App() {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', px: 1.5 }}>{cur + 1} / {SECTIONS.length}</Typography>
           </Box>
         )}
-        <Box component="main" ref={main} sx={{ flex: 1, minWidth: 0, position: 'relative', overflow: { md: 'hidden' }, overscrollBehavior: 'none' }}>
           {!wide && (
-            <Box component="nav" sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
+            <Box component="nav" sx={{ flexShrink: 0, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={active} variant="scrollable" onChange={(_, v) => jump(v)}>
                 {SECTIONS.map(([id, label]) => <Tab key={id} value={id} label={label} />)}
               </Tabs>
             </Box>
           )}
-          <Box ref={track} sx={wide ? {
+        {/* 섹션 높이는 main 높이를 따른다. 좁은 화면은 위 탭을 뺀 높이 */}
+        <Box component="main" ref={main} style={{ '--page-h': h ? h + 'px' : undefined }} sx={{ flex: 1, minWidth: 0, minHeight: 0, position: 'relative', overflow: 'hidden', overscrollBehavior: 'none' }}>
+          <Box ref={track} sx={{
             transform: `translate3d(0, ${-(track.current?.children[cur]?.offsetTop ?? 0)}px, 0)`, transition: 'transform .6s cubic-bezier(.22, .8, .3, 1)', willChange: 'transform',
             '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-          } : null}>
+          }}>
             <Hero /><Experience wide={wide} /><Projects /><Design /><Awards /><SkillsContact />
           </Box>
           {wide && cur < SECTIONS.length - 1 && <PageArrow dir={1} hint={hint} onClick={() => go(cur + 1)} />}
