@@ -111,6 +111,13 @@ function CopyButton({ text, ...props }) {
   )
 }
 
+// 사이트마다 파비콘을 받아 public/img에 둔 것
+const fun = [
+  ['값싸게 먹기', 'https://beggars-five.vercel.app/', 'fav-saveeats.png'],
+  ['알차게 살기', 'https://nn98.github.io/', 'fav-site.svg'],
+  ['글쓰고 살기', 'https://velog.io/@nn98/posts', 'fav-velog.ico'],
+]
+
 function ExtLink({ href, children }) {
   return <Button size="small" variant="outlined" href={href} target="_blank" rel="noopener" endIcon={<OpenInNewRounded fontSize="small" />}>{children}</Button>
 }
@@ -428,6 +435,13 @@ function SkillsContact() {
           <CopyButton variant="outlined" size="large" text={profile.phone} />
           <Button variant="outlined" size="large" href="#print">PDF 버전</Button>
           {profile.links.map(([l, u]) => <ExtLink key={l} href={u}>{l}</ExtLink>)}
+        </Stack>
+        <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mt: 4, fontWeight: 700 }}>재밌게 살기</Typography>
+        <Stack direction="row" sx={{ justifyContent: 'center', flexWrap: 'wrap', gap: 1 }}>
+          {fun.map(([l, u, ic]) => (
+            <Button key={l} size="small" variant="text" href={u} target="_blank" rel="noopener"
+              startIcon={<Box component="img" src={`${import.meta.env.BASE_URL}img/${ic}`} alt="" width={18} height={18} sx={{ borderRadius: '4px' }} />}>{l}</Button>
+          ))}
         </Stack>
       </Box>
     </Section>
